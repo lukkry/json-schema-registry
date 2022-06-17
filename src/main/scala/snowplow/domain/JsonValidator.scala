@@ -13,16 +13,16 @@ object JsonValidator {
   def validate(
       schema: JsonSchema,
       instance: JsonInstance
-  ): Either[NonEmptyList[ValidationError], JsonInstance] = {
+  ): Either[NonEmptyList[ValidationError], Unit] = {
     val schemaJsonNode = circeToJackson(schema.value)
-    val instanceJsonNode = circeToJackson(instance.value)
+    val instanceJsonNode = circeToJackson(instance.valueNoNull)
     val report = validator.validateUnchecked(schemaJsonNode, instanceJsonNode)
     val messages = report.iterator.asScala.toList
       .map(pm => ValidationError(pm.getMessage))
 
     messages match {
       case h :: t => Left(NonEmptyList.of(h, t: _*))
-      case Nil    => Right(instance)
+      case Nil    => Right(())
     }
   }
 

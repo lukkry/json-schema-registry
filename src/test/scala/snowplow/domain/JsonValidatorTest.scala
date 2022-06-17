@@ -2,92 +2,44 @@ package snowplow.domain
 
 import cats.data.NonEmptyList
 import cats.implicits._
+import io.circe.ParsingFailure
 import io.circe.parser._
 import munit.FunSuite
-import snowplow.domain.JsonValidatorTest._
+import snowplow.FixtureSupport._
+import snowplow.domain.JsonValidatorTest.withSchemaInstance
 
 class JsonValidatorTest extends FunSuite {
-  test("should return a provided json instance when it is valid") {
-    (parse(rawSchema), parse(rawValidInstance)).tupled.map {
-      case (schema, instance) =>
-        val result =
-          JsonValidator.validate(JsonSchema(schema), JsonInstance(instance))
+  test("should return success for a valid json instance") {
+    withSchemaInstance(rawSchema, rawValidInstance) { (schema, instance) =>
+      val result = JsonValidator.validate(schema, instance)
+      assertEquals(result, Right(()))
+    }
+  }
 
-        assertEquals(result, Right(JsonInstance(instance)))
+  test("should return success for a valid json instance with null fields") {
+    withSchemaInstance(rawSchema, rawValidInstanceWithNull) { (schema, instance) =>
+      val result = JsonValidator.validate(schema, instance)
+      assertEquals(result, Right(()))
     }
   }
 
   test("should return validation errors when a json instance is invalid") {
-    (parse(rawSchema), parse(rawInvalidInstance)).tupled.map {
-      case (schema, instance) =>
-        val result =
-          JsonValidator.validate(JsonSchema(schema), JsonInstance(instance))
-        val expectedMessage =
-          "instance type (null) does not match any allowed primitive type (allowed: [\"integer\"])"
-
-        assertEquals(
-          result,
-          Left(
-            NonEmptyList.of(
-              ValidationError(expectedMessage),
-              ValidationError(expectedMessage)
-            )
-          )
+    withSchemaInstance(rawSchema, rawInvalidInstance) { (schema, instance) =>
+      val result = JsonValidator.validate(schema, instance)
+      val expectedResult =
+        NonEmptyList.one(
+          ValidationError("object has missing required properties ([\"source\"])")
         )
+      assertEquals(result, Left(expectedResult))
     }
   }
 }
 
 object JsonValidatorTest {
-  val rawValidInstance: String = """
-{
-  "source": "/home/alice/image.iso",
-  "destination": "/mnt/storage",
-}
-"""
-
-  val rawInvalidInstance: String = """
-{
-  "source": "/home/alice/image.iso",
-  "destination": "/mnt/storage",
-  "timeout": null,
-  "chunks": {
-    "size": 1024,
-    "number": null
-  }
-}
-"""
-
-  val rawSchema: String = """
-{
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "type": "object",
-  "properties": {
-    "source": {
-      "type": "string"
-    },
-    "destination": {
-      "type": "string"
-    },
-    "timeout": {
-      "type": "integer",
-      "minimum": 0,
-      "maximum": 32767
-    },
-    "chunks": {
-      "type": "object",
-      "properties": {
-        "size": {
-          "type": "integer"
-        },
-        "number": {
-          "type": "integer"
-        }
-      },
-      "required": ["size"]
+  def withSchemaInstance(schema: String, instance: String)(
+      test: (JsonSchema, JsonInstance) => Unit
+  ): Either[ParsingFailure, Unit] =
+    (parse(schema), parse(instance)).tupled.map { case (schema, instance) =>
+      test(JsonSchema(schema), JsonInstance(instance))
     }
-  },
-  "required": ["source", "destination"]
-}
-"""
 }
