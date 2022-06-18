@@ -27,8 +27,8 @@ class JsonValidatorTest extends FunSuite {
     withSchemaInstance(rawSchema, rawInvalidInstance) { (schemaContent, instance) =>
       val result = JsonValidator.validate(schemaContent, instance)
       val expectedResult =
-        NonEmptyList.one(
-          ValidationError("object has missing required properties ([\"source\"])")
+        ValidationError.InvalidInstance(
+          NonEmptyList.one("object has missing required properties ([\"source\"])")
         )
       assertEquals(result, Left(expectedResult))
     }
