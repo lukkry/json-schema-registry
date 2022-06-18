@@ -1,9 +1,25 @@
 package snowplow.http
 
 import munit.CatsEffectSuite
+import org.http4s.Status
+import org.http4s.circe._
+import org.http4s.client.dsl.io._
+import org.http4s.dsl.io._
+import org.http4s.implicits._
+import snowplow.FixtureSupport
+import snowplow.domain.Processor
+import snowplow.storage.InMemorySchemaRepository
 
 class HttpServerTest extends CatsEffectSuite {
-  test("POST create schema should return 201 Created if schema is successfully stored") {}
+  test("POST create schema should return 201 Created if schema is successfully stored") {
+    InMemorySchemaRepository.create().flatMap { schemaRepository =>
+      val processor = Processor.create(schemaRepository)
+      val request = POST(FixtureSupport.schemaContent.value, uri"/schema/test-schema-id")
+      val response = HttpServer.routes(processor).orNotFound.run(request)
+
+      assertIO(response.map(_.status), Status.Ok)
+    }
+  }
 
   test("POST create schema should return 400 Bad Request if schema is not a valid JSON") {}
 

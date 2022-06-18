@@ -7,14 +7,22 @@ import org.http4s.dsl.io._
 import org.http4s.ember.server._
 import org.http4s.implicits._
 import org.http4s.server.{Router, Server}
+import snowplow.domain.Processor
 
 object HttpServer {
-  val routes: HttpRoutes[IO] = HttpRoutes.of[IO] { case GET -> Root / "schema" / schemaId =>
-    Ok(s"Hello $schemaId")
+  def routes(processor: Processor): HttpRoutes[IO] = {
+    val httpService = HttpService(processor)
+
+    HttpRoutes.of[IO] {
+      case GET -> Root / "schema" / schemaId =>
+        Ok(s"Hello $schemaId")
+      case request @ POST -> Root / "schema" / schemaId =>
+        httpService.storeSchema(schemaId, request)
+    }
   }
 
-  def create: Resource[IO, Server] = {
-    val httpApp = Router("/" -> routes).orNotFound
+  def create(processor: Processor): Resource[IO, Server] = {
+    val httpApp = Router("/" -> routes(processor)).orNotFound
 
     EmberServerBuilder
       .default[IO]

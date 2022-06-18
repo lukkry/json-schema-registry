@@ -1,14 +1,14 @@
 package snowplow
 
-import io.circe.Json
-import io.circe.parser._
+import io.circe.literal._
 import snowplow.domain.{JsonInstance, JsonSchema, JsonSchemaContent, JsonSchemaId}
 
 object FixtureSupport {
-  val rawSchema =
-    """
+  val schemaContent: JsonSchemaContent =
+    JsonSchemaContent(
+      json"""
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "schema": "http://json-schema.org/draft-04/schema#",
   "type": "object",
   "properties": {
     "source": {
@@ -38,17 +38,27 @@ object FixtureSupport {
   "required": ["source", "destination"]
 }
 """
+    )
 
-  val rawValidInstance =
-    """
+  val schema: JsonSchema =
+    JsonSchema(
+      id = JsonSchemaId("test-schema-id"),
+      content = schemaContent
+    )
+
+  val validInstance: JsonInstance =
+    JsonInstance(
+      json"""
 {
   "source": "/home/alice/image.iso",
   "destination": "/mnt/storage"
 }
 """
+    )
 
-  val rawValidInstanceWithNull =
-    """
+  val validInstanceWithNull: JsonInstance =
+    JsonInstance(
+      json"""
 {
   "source": "/home/alice/image.iso",
   "destination": "/mnt/storage",
@@ -59,9 +69,11 @@ object FixtureSupport {
   }
 }
 """
+    )
 
-  val rawInvalidInstance =
-    """
+  val invalidInstance: JsonInstance =
+    JsonInstance(
+      json"""
 {
   "source": null,
   "destination": "/mnt/storage",
@@ -72,15 +84,5 @@ object FixtureSupport {
   }
 }
 """
-
-  def generateJsonSchema(id: String): JsonSchema =
-    JsonSchema(
-      id = JsonSchemaId(id),
-      content = JsonSchemaContent(parse(rawSchema).getOrElse(Json.Null))
-    )
-
-  def generateJsonInstance(): JsonInstance =
-    JsonInstance(
-      value = parse(rawValidInstance).getOrElse(Json.Null)
     )
 }

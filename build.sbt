@@ -16,12 +16,14 @@ lazy val root = (project in file("."))
       "com.github.java-json-tools" % "json-schema-core" % "1.2.14",
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-parser" % circeVersion,
+      "io.circe" %% "circe-literal" % circeVersion,
       "io.circe" % "circe-jackson28_2.13" % "0.14.0",
       "io.circe" %% "circe-jackson28" % "0.14.0",
       "com.fasterxml.jackson.core" % "jackson-databind" % "2.11.0",
       "org.http4s" %% "http4s-dsl" % http4sVersion,
       "org.http4s" %% "http4s-ember-server" % http4sVersion,
       "org.http4s" %% "http4s-ember-client" % http4sVersion,
+      "org.http4s" %% "http4s-circe" % http4sVersion,
       "org.scalameta" %% "munit" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
     )
