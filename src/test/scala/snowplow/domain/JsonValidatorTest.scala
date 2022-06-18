@@ -10,22 +10,22 @@ import snowplow.domain.JsonValidatorTest.withSchemaInstance
 
 class JsonValidatorTest extends FunSuite {
   test("should return success for a valid json instance") {
-    withSchemaInstance(rawSchema, rawValidInstance) { (schema, instance) =>
-      val result = JsonValidator.validate(schema, instance)
+    withSchemaInstance(rawSchema, rawValidInstance) { (schemaContent, instance) =>
+      val result = JsonValidator.validate(schemaContent, instance)
       assertEquals(result, Right(()))
     }
   }
 
   test("should return success for a valid json instance with null fields") {
-    withSchemaInstance(rawSchema, rawValidInstanceWithNull) { (schema, instance) =>
-      val result = JsonValidator.validate(schema, instance)
+    withSchemaInstance(rawSchema, rawValidInstanceWithNull) { (schemaContent, instance) =>
+      val result = JsonValidator.validate(schemaContent, instance)
       assertEquals(result, Right(()))
     }
   }
 
   test("should return validation errors when a json instance is invalid") {
-    withSchemaInstance(rawSchema, rawInvalidInstance) { (schema, instance) =>
-      val result = JsonValidator.validate(schema, instance)
+    withSchemaInstance(rawSchema, rawInvalidInstance) { (schemaContent, instance) =>
+      val result = JsonValidator.validate(schemaContent, instance)
       val expectedResult =
         NonEmptyList.one(
           ValidationError("object has missing required properties ([\"source\"])")
@@ -37,9 +37,9 @@ class JsonValidatorTest extends FunSuite {
 
 object JsonValidatorTest {
   def withSchemaInstance(schema: String, instance: String)(
-      test: (JsonSchema, JsonInstance) => Unit
+      test: (JsonSchemaContent, JsonInstance) => Unit
   ): Either[ParsingFailure, Unit] =
     (parse(schema), parse(instance)).tupled.map { case (schema, instance) =>
-      test(JsonSchema(schema), JsonInstance(instance))
+      test(JsonSchemaContent(schema), JsonInstance(instance))
     }
 }

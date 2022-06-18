@@ -1,5 +1,9 @@
 package snowplow
 
+import io.circe.Json
+import io.circe.parser._
+import snowplow.domain.{JsonSchema, JsonSchemaContent, JsonSchemaId}
+
 object FixtureSupport {
   val rawSchema =
     """
@@ -68,4 +72,10 @@ object FixtureSupport {
   }
 }
 """
+
+  def generateJsonSchema(id: String): JsonSchema =
+    JsonSchema(
+      id = JsonSchemaId(id),
+      content = JsonSchemaContent(parse(rawSchema).getOrElse(Json.Null))
+    )
 }

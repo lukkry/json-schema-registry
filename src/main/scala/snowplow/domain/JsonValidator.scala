@@ -11,10 +11,10 @@ import scala.jdk.CollectionConverters._
 
 object JsonValidator {
   def validate(
-      schema: JsonSchema,
+      schemaContent: JsonSchemaContent,
       instance: JsonInstance
   ): Either[NonEmptyList[ValidationError], Unit] = {
-    val schemaJsonNode = circeToJackson(schema.value)
+    val schemaJsonNode = circeToJackson(schemaContent.value)
     val instanceJsonNode = circeToJackson(instance.valueNoNull)
     val report = validator.validateUnchecked(schemaJsonNode, instanceJsonNode)
     val messages = report.iterator.asScala.toList
