@@ -82,11 +82,74 @@ class HttpServerTest extends CatsEffectSuite {
     }
   }
 
-  test("POST validate should return 200 Ok if instance is valid") {}
+  test("POST validate should return 200 Ok if instance is valid") {
+    InMemorySchemaRepository.create().flatMap { schemaRepository =>
+      val processor = Processor.create(schemaRepository)
+      val storeSchemaRequest = POST(
+        FixtureSupport.schema.content.value,
+        uri"/schema".addSegment(FixtureSupport.schemaId.value)
+      )
+      val validateSchemaRequest = POST(
+        FixtureSupport.validInstanceWithNull.valueNoNull,
+        uri"/validate".addSegment(FixtureSupport.schemaId.value)
+      )
+      val httpApp = HttpServer.routes(processor).orNotFound
+      val responseIO = httpApp.run(storeSchemaRequest) >> httpApp.run(validateSchemaRequest)
+      responseIO.flatMap { response =>
+        assertEquals(response.status.code, 200)
+        assertIO(response.as[Json], FixtureSupport.successValidateInstanceResponse)
+      }
+    }
+  }
 
-  test("POST validate should return 200 Ok if instance is invalid") {}
+  test("POST validate should return 200 Ok if instance is invalid") {
+    InMemorySchemaRepository.create().flatMap { schemaRepository =>
+      val processor = Processor.create(schemaRepository)
+      val storeSchemaRequest = POST(
+        FixtureSupport.schema.content.value,
+        uri"/schema".addSegment(FixtureSupport.schemaId.value)
+      )
+      val validateSchemaRequest = POST(
+        FixtureSupport.invalidInstance.value,
+        uri"/validate".addSegment(FixtureSupport.schemaId.value)
+      )
+      val httpApp = HttpServer.routes(processor).orNotFound
+      val responseIO = httpApp.run(storeSchemaRequest) >> httpApp.run(validateSchemaRequest)
+      responseIO.flatMap { response =>
+        assertEquals(response.status.code, 200)
+        assertIO(response.as[Json], FixtureSupport.invalidInstanceValidateInstanceResponse)
+      }
+    }
+  }
 
-  test("POST validate should return 404 Not Found if schema is not found") {}
+  test("POST validate should return 404 Not Found if schema is not found") {
+    InMemorySchemaRepository.create().flatMap { schemaRepository =>
+      val processor = Processor.create(schemaRepository)
+      val validateSchemaRequest = POST(
+        FixtureSupport.invalidInstance.value,
+        uri"/validate".addSegment(FixtureSupport.schemaId.value)
+      )
+      val httpApp = HttpServer.routes(processor).orNotFound
+      val responseIO = httpApp.run(validateSchemaRequest)
+      responseIO.flatMap { response =>
+        assertEquals(response.status.code, 404)
+        assertIO(response.bodyText.compile.toList, List.empty)
+      }
+    }
+  }
 
-  test("POST validate should return 400 Bad Request is provided instance is not a valid JSON") {}
+  test("POST validate should return 400 Bad Request is provided instance is not a valid JSON") {
+    InMemorySchemaRepository.create().flatMap { schemaRepository =>
+      val processor = Processor.create(schemaRepository)
+      val malformedJson = """{ "key": ??? }"""
+      val validateSchemaRequest =
+        POST(malformedJson, uri"/validate".addSegment(FixtureSupport.schemaId.value))
+      val httpApp = HttpServer.routes(processor).orNotFound
+      val responseIO = httpApp.run(validateSchemaRequest)
+      responseIO.flatMap { response =>
+        assertEquals(response.status.code, 400)
+        assertIO(response.as[Json], FixtureSupport.malformedJsonValidateInstanceResponse)
+      }
+    }
+  }
 }

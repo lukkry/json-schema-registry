@@ -18,6 +18,8 @@ object HttpServer {
         httpService.retrieve(schemaId)
       case request @ POST -> Root / "schema" / schemaId =>
         httpService.storeSchema(schemaId, request)
+      case request @ POST -> Root / "validate" / schemaId =>
+        httpService.validate(schemaId, request)
     }
   }
 

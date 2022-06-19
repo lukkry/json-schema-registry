@@ -113,4 +113,32 @@ object FixtureSupport {
     "message": "Schema with provided id already exists"
 }
 """
+  val successValidateInstanceResponse =
+    json"""
+{
+    "action": "validateDocument",
+    "id": ${schemaId.value},
+    "status": "success"
+}
+"""
+
+  val invalidInstanceValidateInstanceResponse =
+    json"""
+{
+    "action": "validateDocument",
+    "id": ${schemaId.value},
+    "status": "error",
+    "message": "object has missing required properties ([\"source\"])"
+}
+"""
+
+  val malformedJsonValidateInstanceResponse =
+    json"""
+{
+    "action": "validateDocument",
+    "id": ${schemaId.value},
+    "status": "error",
+    "message": "Invalid JSON"
+}
+"""
 }

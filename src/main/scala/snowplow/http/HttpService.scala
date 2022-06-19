@@ -6,7 +6,14 @@ import io.circe.{Decoder, Encoder, Json}
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.{EntityDecoder, MalformedMessageBodyFailure, Request, Response}
-import snowplow.domain.{JsonSchema, JsonSchemaContent, JsonSchemaId, Processor}
+import snowplow.domain.{
+  JsonInstance,
+  JsonSchema,
+  JsonSchemaContent,
+  JsonSchemaId,
+  Processor,
+  ValidationError
+}
 import snowplow.http.HttpService._
 
 case class HttpService(processor: Processor) {
@@ -20,14 +27,14 @@ case class HttpService(processor: Processor) {
         )
         processor.storeSchema(schema).flatMap {
           case Left(_) =>
-            val response = StoreSchemaResponse(
+            val response = HttpResponse(
               action = "uploadSchema",
               id = schemaId,
               status = ResponseStatus.Error("Schema with provided id already exists")
             )
             Conflict(response.asJson)
           case Right(_) =>
-            val response = StoreSchemaResponse(
+            val response = HttpResponse(
               action = "uploadSchema",
               id = schemaId,
               status = ResponseStatus.Success
@@ -37,14 +44,8 @@ case class HttpService(processor: Processor) {
 
       }
       .handleErrorWith {
-        case _: MalformedMessageBodyFailure =>
-          val response = StoreSchemaResponse(
-            action = "uploadSchema",
-            id = schemaId,
-            status = ResponseStatus.Error("Invalid JSON")
-          )
-          BadRequest(response.asJson)
-        case t: Throwable => IO.raiseError(t)
+        case _: MalformedMessageBodyFailure => malformedJsonResponse("uploadSchema", schemaId)
+        case t: Throwable                   => IO.raiseError(t)
       }
 
   def retrieve(schemaId: String): IO[Response[IO]] =
@@ -54,7 +55,44 @@ case class HttpService(processor: Processor) {
       }
     }
 
-  def validate(schemaId: String, instance: String): IO[Response[IO]] = ???
+  def validate(schemaId: String, request: Request[IO]): IO[Response[IO]] =
+    request
+      .as[JsonInstance]
+      .flatMap { instance =>
+        processor.validate(JsonSchemaId(schemaId), instance).flatMap {
+          case Left(validationError) =>
+            validationError match {
+              case ValidationError.InvalidInstance(errors) =>
+                val response = HttpResponse(
+                  action = "validateDocument",
+                  id = schemaId,
+                  status = ResponseStatus.Error(errors.toList.mkString(". "))
+                )
+                Ok(response.asJson)
+              case ValidationError.SchemaNotFound => NotFound()
+            }
+          case Right(_) =>
+            val response = HttpResponse(
+              action = "validateDocument",
+              id = schemaId,
+              status = ResponseStatus.Success
+            )
+            Ok(response.asJson)
+        }
+      }
+      .handleErrorWith {
+        case _: MalformedMessageBodyFailure => malformedJsonResponse("validateDocument", schemaId)
+        case t: Throwable                   => IO.raiseError(t)
+      }
+
+  private def malformedJsonResponse(action: String, schemaId: String): IO[Response[IO]] = {
+    val response = HttpResponse(
+      action = action,
+      id = schemaId,
+      status = ResponseStatus.Error("Invalid JSON")
+    )
+    BadRequest(response.asJson)
+  }
 }
 
 object HttpService {
@@ -64,14 +102,14 @@ object HttpService {
     case class Error(message: String) extends ResponseStatus
   }
 
-  case class StoreSchemaResponse(
+  case class HttpResponse(
       action: String,
       id: String,
       status: ResponseStatus
   )
 
-  implicit val storeSchemaResponseEncoder: Encoder[StoreSchemaResponse] =
-    (response: StoreSchemaResponse) =>
+  implicit val storeSchemaResponseEncoder: Encoder[HttpResponse] =
+    (response: HttpResponse) =>
       response.status match {
         case ResponseStatus.Success =>
           Json.obj(
@@ -93,4 +131,10 @@ object HttpService {
 
   implicit val jsonSchemaContentEntityDecoder: EntityDecoder[IO, JsonSchemaContent] =
     jsonOf[IO, JsonSchemaContent]
+
+  implicit val jsonInstanceDecoder: Decoder[JsonInstance] =
+    Decoder.decodeJson.map(json => JsonInstance(json))
+
+  implicit val jsonInstanceEntityDecoder: EntityDecoder[IO, JsonInstance] =
+    jsonOf[IO, JsonInstance]
 }
