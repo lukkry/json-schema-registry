@@ -1,7 +1,17 @@
 # JSON Schema Registry
 
-## Running locally
+## Architecture
+The service follows Hexagonal Architecture (aka Ports & Adapters) and Domain Driven Design.
+One of the benefits of Hexagonal Architecture is ability to test domain layer in a complete isolation without a need to integrate with external components.
+[SchemaRepository](src/main/scala/snowplow/domain/SchemaRepository.scala) is an example of a port which has 2 adapters:
+* [PostgresSchemaRepository](src/main/scala/snowplow/storage/PostgresSchemaRepository.scala) - used by a production code
+* [InMemorySchemaRepository](src/test/scala/snowplow/InMemorySchemaRepository.scala) - use for testing purposes, e.g. all domain tests are written using in memory adapter
 
+More details re Hexagonal can be found under below links:
+* https://alistair.cockburn.us/hexagonal-architecture/
+* https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)
+
+## Running locally
 ```shell
 DATABASE_CONNECTION_STRING=jdbc:postgresql://localhost:5432/snowplow \
 DATABASE_USERNAME=lukkry \
@@ -86,5 +96,9 @@ curl http://localhost:8080/validate/config-schema -X POST -d @malformed.json -v 
   "status": "error",
   "message": "Invalid JSON"
 }
-
 ```
+
+# Missing features
+* Logs
+* Metrics
+* Run PostgreSQL inside Docker locally
