@@ -24,6 +24,25 @@ More details re Hexagonal can be found under below links:
 * https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)
 
 ### Storage
+Service has to be able to store and retrieve JSON schemas by ID. There is no need to query schemas by anything else other than their id. 
+Any reasonable key/value storage should be a good fit. I decided to go with PostgreSQL as it can be easily modeled as a table with 2 columns and an index. 
+
+```sql
+CREATE TABLE json_schema(
+  id BIGSERIAL PRIMARY KEY,
+  schema_id VARCHAR(255) NOT NULL,
+  content JSONB NOT NULL,
+
+  UNIQUE(schema_id)
+)
+```
+
+Postgres should provide a good mileage before becoming a performance bottleneck. If it ever does, then there are a few mitigation options:
+* Start using read replicas. This assumes workload is read heavy and strong consistency between HTTP queries is not required. Schema might not be available to all users immediatelly after POST request completes successfully.
+* Shard databases by schema namespace. This is a functional change which requires introducing a concept of "namespace" which groups related schemas. This allows to create multiple Postgres primary instances and load balance namespaces between them. It can suffer from performance issues in case there are namespaces with so many schemas so that they can be hosted on a single primary.
+
+Alternatively other key/value storages might be considered, e.g. S3.
+
 ## Running locally
 ```shell
 DATABASE_CONNECTION_STRING=jdbc:postgresql://localhost:5432/snowplow \
