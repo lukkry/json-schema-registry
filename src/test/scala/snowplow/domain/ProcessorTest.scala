@@ -23,7 +23,11 @@ class ProcessorTest extends CatsEffectSuite {
       assertIO(
         processor.storeSchema(schemaWithTooLongId),
         Left(
-          SchemaCreationError.SchemaIdInvalid(List("Schema Id is too long. Max 255 characters."))
+          SchemaCreationError.SchemaIdInvalid(
+            List(
+              "Schema id is either too short or too long. Min: 1 character. Max: 255 characters."
+            )
+          )
         )
       )
     }
@@ -41,7 +45,7 @@ class ProcessorTest extends CatsEffectSuite {
         Left(
           SchemaCreationError.SchemaIdInvalid(
             List(
-              "Schema Id contains illegal characters. Only alphanumeric characters and '-' allowed"
+              "Schema id contains illegal characters. Only alphanumeric characters and '-' allowed."
             )
           )
         )

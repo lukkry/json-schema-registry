@@ -140,7 +140,7 @@ object FixtureSupport {
     "action": "uploadSchema",
     "id": $schemaId,
     "status": "error",
-    "message": "Schema Id is too long. Max 255 characters."
+    "message": "Schema id is either too short or too long. Min: 1 character. Max: 255 characters."
 }
 """
 

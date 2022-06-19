@@ -33,14 +33,15 @@ object Processor {
     ): Either[SchemaCreationError, JsonSchemaId] = {
       val ensureSize =
         if (schemaId.value.nonEmpty && schemaId.value.length <= 255) None
-        else Some("Schema Id is too long. Max 255 characters.")
+        else
+          Some("Schema id is either too short or too long. Min: 1 character. Max: 255 characters.")
 
       val ensureAlphaNumeric =
         if (schemaId.value.forall(c => c.isLetterOrDigit || c == '-'))
           None
         else
           Some(
-            "Schema Id contains illegal characters. Only alphanumeric characters and '-' allowed"
+            "Schema id contains illegal characters. Only alphanumeric characters and '-' allowed."
           )
 
       val errors = List(ensureSize, ensureAlphaNumeric).flatten
