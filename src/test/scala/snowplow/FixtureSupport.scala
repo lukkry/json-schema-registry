@@ -88,6 +88,27 @@ object FixtureSupport {
 """
     )
 
+  val invalidInstanceIncorrectType: JsonInstance =
+    JsonInstance(
+      json"""
+{
+  "source": 123,
+  "destination": 456
+}
+"""
+    )
+
+  val invalidInstanceNumericConstraint: JsonInstance =
+    JsonInstance(
+      json"""
+{
+  "source": 123,
+  "destination": "/mnt/storage",
+  "timeout": 42767
+}
+"""
+    )
+
   val successStoreSchemaResponse = json"""
 {
     "action": "uploadSchema",

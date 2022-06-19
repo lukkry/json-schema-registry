@@ -5,11 +5,14 @@ import com.github.fge.jsonschema.SchemaVersion
 import com.github.fge.jsonschema.cfg.ValidationConfiguration
 import com.github.fge.jsonschema.core.report.{ListReportProvider, LogLevel}
 import com.github.fge.jsonschema.main.JsonSchemaFactory
-import io.circe.jackson.circeToJackson
+import io.circe.{Decoder, HCursor}
+import io.circe.jackson.{circeToJackson, jacksonToCirce}
 
 import scala.jdk.CollectionConverters._
 
 object JsonValidator {
+  case class JsonError(value: String)
+
   def validate(
       schemaContent: JsonSchemaContent,
       instance: JsonInstance
@@ -17,8 +20,12 @@ object JsonValidator {
     val schemaJsonNode = circeToJackson(schemaContent.value)
     val instanceJsonNode = circeToJackson(instance.valueNoNull)
     val report = validator.validateUnchecked(schemaJsonNode, instanceJsonNode)
-    val messages = report.iterator.asScala.toList
-      .map(_.getMessage)
+    val messages = report.iterator.asScala.toList.map { pm =>
+      jacksonToCirce(pm.asJson()).as[JsonError] match {
+        case Left(_)      => "Unknown Error"
+        case Right(value) => value.value
+      }
+    }
 
     messages match {
       case h :: t => Left(ValidationError.InvalidInstance(NonEmptyList.of(h, t: _*)))
@@ -37,5 +44,17 @@ object JsonValidator {
       .setValidationConfiguration(config)
       .freeze()
     factory.getValidator
+  }
+
+  implicit val decodeError: Decoder[JsonError] = new Decoder[JsonError] {
+    final def apply(c: HCursor): Decoder.Result[JsonError] = {
+      for {
+        pointer <- c.downField("schema").downField("pointer").as[String]
+        message <- c.downField("message").as[String]
+      } yield {
+        if (pointer.nonEmpty) JsonError(s"Field: $pointer. Error: $message.")
+        else JsonError(message)
+      }
+    }
   }
 }

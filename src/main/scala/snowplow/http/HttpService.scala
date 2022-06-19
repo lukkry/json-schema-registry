@@ -76,7 +76,7 @@ case class HttpService(processor: Processor) {
                 val response = HttpResponse(
                   action = "validateDocument",
                   id = schemaId,
-                  status = ResponseStatus.Error(errors.toList.mkString(". "))
+                  status = ResponseStatus.Error(errors.toList.mkString(" "))
                 )
                 Ok(response.asJson)
               case ValidationError.SchemaNotFound => NotFound()
