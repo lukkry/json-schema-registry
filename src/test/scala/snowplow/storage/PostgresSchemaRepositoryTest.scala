@@ -9,7 +9,7 @@ import doobie.util.transactor.Transactor.Aux
 import munit.CatsEffectSuite
 import org.testcontainers.utility.DockerImageName
 import snowplow.FixtureSupport
-import snowplow.domain.SchemaRepository.SchemaAlreadyExists
+import snowplow.domain.SchemaCreationError
 
 class PostgresSchemaRepositoryTest extends CatsEffectSuite with TestContainersFixtures {
   val databaseName = "test-database"
@@ -50,7 +50,10 @@ class PostgresSchemaRepositoryTest extends CatsEffectSuite with TestContainersFi
     val repository = PostgresSchemaRepository.create(transactor)
     prepareDatabase() >>
       assertIO(repository.store(FixtureSupport.schema), Right(())) >>
-      assertIO(repository.store(FixtureSupport.schema), Left(SchemaAlreadyExists))
+      assertIO(
+        repository.store(FixtureSupport.schema),
+        Left(SchemaCreationError.SchemaAlreadyExists)
+      )
   }
 
   test("should return nothing if schema doesn't exist") {

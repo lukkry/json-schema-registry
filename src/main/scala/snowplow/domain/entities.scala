@@ -21,3 +21,9 @@ object ValidationError {
   case class InvalidInstance(errors: NonEmptyList[String]) extends ValidationError
   case object SchemaNotFound extends ValidationError
 }
+
+sealed trait SchemaCreationError
+object SchemaCreationError {
+  case object SchemaAlreadyExists extends SchemaCreationError
+  case class SchemaIdInvalid(errors: List[String]) extends SchemaCreationError
+}

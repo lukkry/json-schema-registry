@@ -13,6 +13,42 @@ class ProcessorTest extends CatsEffectSuite {
     }
   }
 
+  test("should return an error if schema id is too long") {
+    InMemorySchemaRepository.create().flatMap { schemaRepository =>
+      val processor = Processor.create(schemaRepository)
+      val schemaWithTooLongId = JsonSchema(
+        id = JsonSchemaId("long-schema-id" * 100),
+        content = FixtureSupport.schemaContent
+      )
+      assertIO(
+        processor.storeSchema(schemaWithTooLongId),
+        Left(
+          SchemaCreationError.SchemaIdInvalid(List("Schema Id is too long. Max 255 characters."))
+        )
+      )
+    }
+  }
+
+  test("should return an error if schema id contains non-alphanumeric characters") {
+    InMemorySchemaRepository.create().flatMap { schemaRepository =>
+      val processor = Processor.create(schemaRepository)
+      val schemaWithNonAlphaNumericChars = JsonSchema(
+        id = JsonSchemaId("schema-id-!#."),
+        content = FixtureSupport.schemaContent
+      )
+      assertIO(
+        processor.storeSchema(schemaWithNonAlphaNumericChars),
+        Left(
+          SchemaCreationError.SchemaIdInvalid(
+            List(
+              "Schema Id contains illegal characters. Only alphanumeric characters and '-' allowed"
+            )
+          )
+        )
+      )
+    }
+  }
+
   test("should return an error if schema is not found") {
     InMemorySchemaRepository.create().flatMap { schemaRepository =>
       val processor = Processor.create(schemaRepository)

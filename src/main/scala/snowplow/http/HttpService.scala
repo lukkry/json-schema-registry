@@ -12,6 +12,7 @@ import snowplow.domain.{
   JsonSchemaContent,
   JsonSchemaId,
   Processor,
+  SchemaCreationError,
   ValidationError
 }
 import snowplow.http.HttpService._
@@ -22,33 +23,34 @@ case class HttpService(processor: Processor) {
       .as[JsonSchemaContent]
       .flatMap { schemaContent =>
         val schema = JsonSchema(
-          id = JsonSchemaId(schemaId),
+          id = JsonSchemaId(schemaId.trim),
           content = schemaContent
         )
         processor.storeSchema(schema).flatMap {
-          case Left(_) =>
+          case Left(error) =>
+            error match {
+              case SchemaCreationError.SchemaAlreadyExists =>
+                val response = HttpResponse(
+                  action = "uploadSchema",
+                  id = schemaId,
+                  status = ResponseStatus.Error("Schema with provided id already exists")
+                )
+                Conflict(response.asJson)
+              case SchemaCreationError.SchemaIdInvalid(errors) =>
+                val response = HttpResponse(
+                  action = "uploadSchema",
+                  id = schemaId,
+                  status = ResponseStatus.Error(errors.mkString(". "))
+                )
+                BadRequest(response.asJson)
+            }
+          case Right(_) =>
             val response = HttpResponse(
               action = "uploadSchema",
               id = schemaId,
-              status = ResponseStatus.Error("Schema with provided id already exists")
+              status = ResponseStatus.Success
             )
-            Conflict(response.asJson)
-          case Right(_) =>
-            if (schemaId.length > 255) {
-              val response = HttpResponse(
-                action = "uploadSchema",
-                id = schemaId,
-                status = ResponseStatus.Error("Schema id is too long (max: 255 characters)")
-              )
-              BadRequest(response.asJson)
-            } else {
-              val response = HttpResponse(
-                action = "uploadSchema",
-                id = schemaId,
-                status = ResponseStatus.Success
-              )
-              Created(response.asJson)
-            }
+            Created(response.asJson)
         }
       }
       .handleErrorWith {

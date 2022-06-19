@@ -8,19 +8,23 @@ import doobie.postgres.circe.jsonb.implicits.{jsonbGet, jsonbPut}
 import doobie.postgres.sqlstate
 import doobie.util.transactor.Transactor
 import io.circe.Json
-import snowplow.domain.{JsonSchema, JsonSchemaContent, JsonSchemaId, SchemaRepository}
+import snowplow.domain.{
+  JsonSchema,
+  JsonSchemaContent,
+  JsonSchemaId,
+  SchemaCreationError,
+  SchemaRepository
+}
 
 object PostgresSchemaRepository {
   def create(transactor: Transactor[IO]): SchemaRepository = new SchemaRepository {
     override def retrieve(schemaId: JsonSchemaId): IO[Option[JsonSchema]] =
       retrieveSchemaQuery(schemaId.value).option.transact(transactor)
 
-    override def store(
-        schema: JsonSchema
-    ): IO[Either[SchemaRepository.SchemaRepositoryError, Unit]] =
+    override def store(schema: JsonSchema): IO[Either[SchemaCreationError, Unit]] =
       insertSchema(schema).run.void
-        .attemptSomeSqlState[SchemaRepository.SchemaRepositoryError] {
-          case sqlstate.class23.UNIQUE_VIOLATION => SchemaRepository.SchemaAlreadyExists
+        .attemptSomeSqlState[SchemaCreationError] { case sqlstate.class23.UNIQUE_VIOLATION =>
+          SchemaCreationError.SchemaAlreadyExists
         }
         .transact(transactor)
   }
