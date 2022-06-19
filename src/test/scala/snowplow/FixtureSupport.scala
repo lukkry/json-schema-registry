@@ -40,9 +40,11 @@ object FixtureSupport {
 """
     )
 
+  val schemaId: JsonSchemaId = JsonSchemaId("test-schema-id")
+
   val schema: JsonSchema =
     JsonSchema(
-      id = JsonSchemaId("test-schema-id"),
+      id = schemaId,
       content = schemaContent
     )
 
@@ -85,4 +87,21 @@ object FixtureSupport {
 }
 """
     )
+
+  val successStoreSchemaResponse = json"""
+{
+    "action": "uploadSchema",
+    "id": ${schemaId.value},
+    "status": "success"
+}
+"""
+
+  val errorStoreSchemaResponse = json"""
+{
+    "action": "uploadSchema",
+    "id": ${schemaId.value},
+    "status": "error",
+    "message": "Invalid JSON"
+}
+"""
 }

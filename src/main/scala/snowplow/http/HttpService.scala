@@ -1,26 +1,45 @@
 package snowplow.http
 
 import cats.effect.IO
-import io.circe.Decoder
+import io.circe.syntax.EncoderOps
+import io.circe.{Decoder, Encoder, Json}
 import org.http4s.circe._
 import org.http4s.dsl.io._
-import org.http4s.{EntityDecoder, Request, Response}
+import org.http4s.{EntityDecoder, MalformedMessageBodyFailure, Request, Response}
 import snowplow.domain.{JsonSchema, JsonSchemaContent, JsonSchemaId, Processor}
 import snowplow.http.HttpService._
 
 case class HttpService(processor: Processor) {
-  def storeSchema(schemaId: String, request: Request[IO]): IO[Response[IO]] = {
-    request.as[JsonSchemaContent].flatMap { schemaContent =>
-      val schema = JsonSchema(
-        id = JsonSchemaId(schemaId),
-        content = schemaContent
-      )
+  def storeSchema(schemaId: String, request: Request[IO]): IO[Response[IO]] =
+    request
+      .as[JsonSchemaContent]
+      .flatMap { schemaContent =>
+        val schema = JsonSchema(
+          id = JsonSchemaId(schemaId),
+          content = schemaContent
+        )
+        processor.storeSchema(schema).flatMap {
+          case Left(_) => BadRequest()
+          case Right(_) =>
+            val response = StoreSchemaResponse(
+              action = "uploadSchema",
+              id = schemaId,
+              status = ResponseStatus.Success
+            )
+            Created(response.asJson)
+        }
 
-      processor.storeSchema(schema).flatMap { result =>
-        result.fold(_ => BadRequest(), _ => Ok())
       }
-    }
-  }
+      .handleErrorWith {
+        case _: MalformedMessageBodyFailure =>
+          val response = StoreSchemaResponse(
+            action = "uploadSchema",
+            id = schemaId,
+            status = ResponseStatus.Error("Invalid JSON")
+          )
+          BadRequest(response.asJson)
+        case t: Throwable => IO.raiseError(t)
+      }
 
   def retrieve(schemaId: String): IO[Response[IO]] = ???
 
@@ -28,6 +47,36 @@ case class HttpService(processor: Processor) {
 }
 
 object HttpService {
+  sealed trait ResponseStatus
+  object ResponseStatus {
+    case object Success extends ResponseStatus
+    case class Error(message: String) extends ResponseStatus
+  }
+
+  case class StoreSchemaResponse(
+      action: String,
+      id: String,
+      status: ResponseStatus
+  )
+
+  implicit val storeSchemaResponseEncoder: Encoder[StoreSchemaResponse] =
+    (response: StoreSchemaResponse) =>
+      response.status match {
+        case ResponseStatus.Success =>
+          Json.obj(
+            ("action", Json.fromString(response.action)),
+            ("id", Json.fromString(response.id)),
+            ("status", Json.fromString("success"))
+          )
+        case ResponseStatus.Error(message) =>
+          Json.obj(
+            ("action", Json.fromString(response.action)),
+            ("id", Json.fromString(response.id)),
+            ("status", Json.fromString("error")),
+            ("message", Json.fromString(message))
+          )
+      }
+
   implicit val jsonSchemaContentDecoder: Decoder[JsonSchemaContent] =
     Decoder.decodeJson.map(json => JsonSchemaContent(json))
 

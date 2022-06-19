@@ -1,7 +1,7 @@
 package snowplow.http
 
+import io.circe.Json
 import munit.CatsEffectSuite
-import org.http4s.Status
 import org.http4s.circe._
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
@@ -14,14 +14,30 @@ class HttpServerTest extends CatsEffectSuite {
   test("POST create schema should return 201 Created if schema is successfully stored") {
     InMemorySchemaRepository.create().flatMap { schemaRepository =>
       val processor = Processor.create(schemaRepository)
-      val request = POST(FixtureSupport.schemaContent.value, uri"/schema/test-schema-id")
-      val response = HttpServer.routes(processor).orNotFound.run(request)
-
-      assertIO(response.map(_.status), Status.Ok)
+      val request = POST(
+        FixtureSupport.schema.content.value,
+        uri"/schema".addSegment(FixtureSupport.schemaId.value)
+      )
+      val responseIO = HttpServer.routes(processor).orNotFound.run(request)
+      responseIO.flatMap { response =>
+        assertEquals(response.status.code, 201)
+        assertIO(response.as[Json], FixtureSupport.successStoreSchemaResponse)
+      }
     }
   }
 
-  test("POST create schema should return 400 Bad Request if schema is not a valid JSON") {}
+  test("POST create schema should return 400 Bad Request if schema is not a valid JSON") {
+    InMemorySchemaRepository.create().flatMap { schemaRepository =>
+      val processor = Processor.create(schemaRepository)
+      val malformedJson = """{ "key": ??? }"""
+      val request = POST(malformedJson, uri"/schema".addSegment(FixtureSupport.schemaId.value))
+      val responseIO = HttpServer.routes(processor).orNotFound.run(request)
+      responseIO.flatMap { response =>
+        assertEquals(response.status.code, 400)
+        assertIO(response.as[Json], FixtureSupport.errorStoreSchemaResponse)
+      }
+    }
+  }
 
   test("POST create schema should return 409 Conflict if schema already exists") {}
 
