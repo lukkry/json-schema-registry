@@ -55,9 +55,32 @@ class HttpServerTest extends CatsEffectSuite {
     }
   }
 
-  test("GET retrieve schema should return 200 Ok if schema is found") {}
+  test("GET retrieve schema should return 200 Ok if schema is found") {
+    InMemorySchemaRepository.create().flatMap { schemaRepository =>
+      val processor = Processor.create(schemaRepository)
+      val uri = uri"/schema".addSegment(FixtureSupport.schemaId.value)
+      val storeSchemaRequest = POST(FixtureSupport.schema.content.value, uri)
+      val getSchemaRequest = GET(uri)
+      val httpApp = HttpServer.routes(processor).orNotFound
+      val responseIO = httpApp.run(storeSchemaRequest) >> httpApp.run(getSchemaRequest)
+      responseIO.flatMap { response =>
+        assertEquals(response.status.code, 200)
+        assertIO(response.as[Json], FixtureSupport.schemaContent.value)
+      }
+    }
+  }
 
-  test("GET retrieve schema should return 404 Not Found if schema is not found") {}
+  test("GET retrieve schema should return 404 Not Found if schema is not found") {
+    InMemorySchemaRepository.create().flatMap { schemaRepository =>
+      val processor = Processor.create(schemaRepository)
+      val getSchemaRequest = GET(uri"/schema".addSegment(FixtureSupport.schemaId.value))
+      val responseIO = HttpServer.routes(processor).orNotFound.run(getSchemaRequest)
+      responseIO.flatMap { response =>
+        assertEquals(response.status.code, 404)
+        assertIO(response.bodyText.compile.toList, List.empty)
+      }
+    }
+  }
 
   test("POST validate should return 200 Ok if instance is valid") {}
 

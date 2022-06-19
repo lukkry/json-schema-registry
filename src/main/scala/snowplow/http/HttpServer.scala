@@ -15,7 +15,7 @@ object HttpServer {
 
     HttpRoutes.of[IO] {
       case GET -> Root / "schema" / schemaId =>
-        Ok(s"Hello $schemaId")
+        httpService.retrieve(schemaId)
       case request @ POST -> Root / "schema" / schemaId =>
         httpService.storeSchema(schemaId, request)
     }

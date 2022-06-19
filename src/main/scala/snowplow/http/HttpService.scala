@@ -47,7 +47,12 @@ case class HttpService(processor: Processor) {
         case t: Throwable => IO.raiseError(t)
       }
 
-  def retrieve(schemaId: String): IO[Response[IO]] = ???
+  def retrieve(schemaId: String): IO[Response[IO]] =
+    processor.retrieve(JsonSchemaId(schemaId)).flatMap { maybeSchema =>
+      maybeSchema.fold(NotFound()) { schema =>
+        Ok(schema.content.value)
+      }
+    }
 
   def validate(schemaId: String, instance: String): IO[Response[IO]] = ???
 }
