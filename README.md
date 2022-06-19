@@ -158,6 +158,20 @@ curl http://localhost:8080/validate/config-schema -X POST -d @invalid-instance.j
 }
 ```
 
+#### Validate an invalid instance with multiple errors
+```shell
+curl http://localhost:8080/validate/config-schema -X POST -d @invalid-instance-multiple-errors.json -v | jq
+< HTTP/1.1 200 OK
+```
+```json
+{
+  "action": "validateDocument",
+  "id": "config-schema",
+  "status": "error",
+  "message": "Field: /properties/source. Error: instance type (integer) does not match any allowed primitive type (allowed: [\"string\"]). Field: /properties/timeout. Error: numeric instance is greater than the required maximum (maximum: 32767, found: 42767)."
+}
+```
+
 #### Validate against non-existing schema
 ```shell
 curl http://localhost:8080/validate/non-existing-schema -X POST -d @valid-instance.json -v | jq
