@@ -6,7 +6,6 @@
 
 ![Untitled-2022-06-19-1620(1)](https://user-images.githubusercontent.com/191244/174489741-b24c09e6-f01b-4f07-a8c5-8788a73b16f6.png)
 
-
 ### Hexagonal Architecture
 The service follows Hexagonal Architecture (aka Ports & Adapters) and Domain Driven Design.
 One of the benefits of Hexagonal Architecture is ability to test domain layer in a complete isolation without a need to integrate with external components.
@@ -44,12 +43,19 @@ Postgres should provide a good mileage before becoming a performance bottleneck.
 Alternatively other key/value storages might be considered, e.g. S3.
 
 ## Running locally
+### Via Docker Compose
+The easiest way to run application locally is via docker compose. Steps:
+1. Publish Docker images locally with `sbt "docker:publishLocal"`
+2. Start PostgreSQL and application containers with `docker-compose up`
+
+### Via sbt
+Alternatively, the application can be run via sbt. It requires a running PostgreSQL instance and pointing to it.
+
 ```shell
-DATABASE_CONNECTION_STRING=jdbc:postgresql://localhost:5432/snowplow \
-DATABASE_USERNAME=lukkry \
-DATABASE_PASSWORD= \
-sbt run
+DATABASE_CONNECTION_STRING=jdbc:postgresql://localhost:5432/snowplow DATABASE_USERNAME=snowplow DATABASE_PASSWORD=snowplow sbt run
 ```
+
+Database migrations are run via Flyway on application startup.
 
 ## Running test scenarios locally
 From the project root, go to `test-data` directory

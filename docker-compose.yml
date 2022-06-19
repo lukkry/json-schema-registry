@@ -1,0 +1,25 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:14
+    container_name: postgres-14
+    environment:
+      - "POSTGRES_USER=snowplow"
+      - "POSTGRES_PASSWORD=snowplow"
+      - "POSTGRES_DB=snowplow"
+    ports:
+      - "5432:5432"
+    volumes:
+      - "./sql:/docker-entrypoint-initdb.d"
+  json-schema-registry:
+    image: json-schema-registry:0.1.0-SNAPSHOT
+    container_name: json-schema-registry
+    depends_on:
+      - postgres
+    environment:
+      - "DATABASE_CONNECTION_STRING=jdbc:postgresql://postgres:5432/snowplow"
+      - "DATABASE_USERNAME=snowplow"
+      - "DATABASE_PASSWORD=snowplow"
+    ports:
+      - "8080:8080"

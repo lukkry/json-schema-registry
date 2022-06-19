@@ -8,6 +8,7 @@ val http4sVersion = "0.23.12"
 val doobieVersion = "1.0.0-RC2"
 
 lazy val root = (project in file("."))
+  .enablePlugins(AshScriptPlugin, JavaAppPackaging, DockerPlugin)
   .settings(
     name := "json-schema-registry",
     libraryDependencies ++= Seq(
@@ -36,7 +37,8 @@ lazy val root = (project in file("."))
       "com.dimafeng" %% "testcontainers-scala-munit" % "0.40.8" % Test,
       "com.dimafeng" %% "testcontainers-scala-postgresql" % "0.40.8" % Test,
       "org.tpolecat" %% "doobie-munit" % doobieVersion % Test
-    )
+    ),
+    dockerBaseImage := "adoptopenjdk/openjdk11-openj9:alpine-slim"
   )
 
 Test / fork := true
