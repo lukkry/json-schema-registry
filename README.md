@@ -1,16 +1,29 @@
 # JSON Schema Registry
 
 ## Architecture
+### High level overview
+
+
+![Untitled-2022-06-19-1620(1)](https://user-images.githubusercontent.com/191244/174489741-b24c09e6-f01b-4f07-a8c5-8788a73b16f6.png)
+
+
+### Hexagonal Architecture
 The service follows Hexagonal Architecture (aka Ports & Adapters) and Domain Driven Design.
 One of the benefits of Hexagonal Architecture is ability to test domain layer in a complete isolation without a need to integrate with external components.
+
 [SchemaRepository](src/main/scala/snowplow/domain/SchemaRepository.scala) is an example of a port which has 2 adapters:
 * [PostgresSchemaRepository](src/main/scala/snowplow/storage/PostgresSchemaRepository.scala) - used by a production code
 * [InMemorySchemaRepository](src/test/scala/snowplow/InMemorySchemaRepository.scala) - use for testing purposes, e.g. all domain tests are written using in memory adapter
+
+![Untitled-2022-06-19-1620(2)](https://user-images.githubusercontent.com/191244/174490028-116c15fe-85bb-4c55-b48a-6285fda51bd9.png)
+
+All technology specific concerns, e.g. PostgreSQL queries, HTTP routes, codecs etc. are part of relevant adapters. This helps to keep domain layer technology agnostic.
 
 More details re Hexagonal can be found under below links:
 * https://alistair.cockburn.us/hexagonal-architecture/
 * https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)
 
+### Storage
 ## Running locally
 ```shell
 DATABASE_CONNECTION_STRING=jdbc:postgresql://localhost:5432/snowplow \
