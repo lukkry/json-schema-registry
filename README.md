@@ -45,7 +45,7 @@ Alternatively other key/value storages might be considered, e.g. S3.
 ## Running locally
 ### Via Docker Compose
 The easiest way to run application locally is via docker compose. Steps:
-1. Publish Docker images locally with `sbt "docker:publishLocal"`
+1. Publish Docker image locally with `sbt "docker:publishLocal"`
 2. Start PostgreSQL and application containers with `docker-compose up`
 
 ### Via sbt
@@ -57,13 +57,13 @@ DATABASE_CONNECTION_STRING=jdbc:postgresql://localhost:5432/snowplow DATABASE_US
 
 Database migrations are run via Flyway on application startup.
 
-## Running automated tests locally
-Automated tests can be run with a below command. Docker environment is required PostgreSQL adapter tests.
+## Running automated tests
+Automated tests can be run with a below command. Working Docker environment is required for PostgreSQL adapter tests.
 ```shell
 sbt test
 ```
 
-## Running test scenarios locally
+## Running test scenarios manually
 From the project root, go to `test-data` directory
 ```shell
 cd test-data
@@ -177,8 +177,3 @@ curl http://localhost:8080/validate/config-schema -X POST -d @malformed.json -v 
   "message": "Invalid JSON"
 }
 ```
-
-# Missing features
-* Logs
-* Metrics
-* Run PostgreSQL inside Docker locally
