@@ -34,12 +34,26 @@ class HttpServerTest extends CatsEffectSuite {
       val responseIO = HttpServer.routes(processor).orNotFound.run(request)
       responseIO.flatMap { response =>
         assertEquals(response.status.code, 400)
-        assertIO(response.as[Json], FixtureSupport.errorStoreSchemaResponse)
+        assertIO(response.as[Json], FixtureSupport.malformedJsonStoreSchemaResponse)
       }
     }
   }
 
-  test("POST create schema should return 409 Conflict if schema already exists") {}
+  test("POST create schema should return 409 Conflict if schema already exists") {
+    InMemorySchemaRepository.create().flatMap { schemaRepository =>
+      val processor = Processor.create(schemaRepository)
+      val request = POST(
+        FixtureSupport.schema.content.value,
+        uri"/schema".addSegment(FixtureSupport.schemaId.value)
+      )
+      val httpApp = HttpServer.routes(processor).orNotFound
+      val responseIO = httpApp.run(request) >> httpApp.run(request)
+      responseIO.flatMap { response =>
+        assertEquals(response.status.code, 409)
+        assertIO(response.as[Json], FixtureSupport.schemaAlreadyExistsStoreSchemaResponse)
+      }
+    }
+  }
 
   test("GET retrieve schema should return 200 Ok if schema is found") {}
 

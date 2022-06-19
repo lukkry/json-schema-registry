@@ -96,12 +96,21 @@ object FixtureSupport {
 }
 """
 
-  val errorStoreSchemaResponse = json"""
+  val malformedJsonStoreSchemaResponse = json"""
 {
     "action": "uploadSchema",
     "id": ${schemaId.value},
     "status": "error",
     "message": "Invalid JSON"
+}
+"""
+
+  val schemaAlreadyExistsStoreSchemaResponse = json"""
+{
+    "action": "uploadSchema",
+    "id": ${schemaId.value},
+    "status": "error",
+    "message": "Schema with provided id already exists"
 }
 """
 }

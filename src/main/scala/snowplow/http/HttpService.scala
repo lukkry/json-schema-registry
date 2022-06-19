@@ -19,7 +19,13 @@ case class HttpService(processor: Processor) {
           content = schemaContent
         )
         processor.storeSchema(schema).flatMap {
-          case Left(_) => BadRequest()
+          case Left(_) =>
+            val response = StoreSchemaResponse(
+              action = "uploadSchema",
+              id = schemaId,
+              status = ResponseStatus.Error("Schema with provided id already exists")
+            )
+            Conflict(response.asJson)
           case Right(_) =>
             val response = StoreSchemaResponse(
               action = "uploadSchema",
