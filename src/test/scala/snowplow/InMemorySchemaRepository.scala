@@ -1,4 +1,4 @@
-package snowplow.storage
+package snowplow
 
 import cats.effect.{IO, Ref}
 import snowplow.domain.SchemaRepository.{SchemaAlreadyExists, SchemaRepositoryError}

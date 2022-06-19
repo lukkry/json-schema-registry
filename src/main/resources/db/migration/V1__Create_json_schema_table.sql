@@ -1,0 +1,7 @@
+CREATE TABLE json_schema(
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  schema_id VARCHAR(255) NOT NULL,
+  content JSONB NOT NULL,
+
+  UNIQUE(schema_id)
+)

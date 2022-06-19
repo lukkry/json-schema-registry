@@ -1,9 +1,8 @@
 package snowplow.domain
 
 import munit.CatsEffectSuite
-import snowplow.FixtureSupport
+import snowplow.{FixtureSupport, InMemorySchemaRepository}
 import snowplow.domain.ValidationError.SchemaNotFound
-import snowplow.storage.InMemorySchemaRepository
 
 class ProcessorTest extends CatsEffectSuite {
   test("should successfully store and retrieve a schema") {
