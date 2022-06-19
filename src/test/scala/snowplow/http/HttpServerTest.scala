@@ -38,6 +38,27 @@ class HttpServerTest extends CatsEffectSuite {
     }
   }
 
+  test(
+    "POST create schema should return 400 Bad Request if schema id is longer than 255 characters"
+  ) {
+    InMemorySchemaRepository.create().flatMap { schemaRepository =>
+      val processor = Processor.create(schemaRepository)
+      val tooLongSchemaId = "long-schema-id" * 100
+      val request = POST(
+        FixtureSupport.schema.content.value,
+        uri"/schema".addSegment(tooLongSchemaId)
+      )
+      val responseIO = HttpServer.routes(processor).orNotFound.run(request)
+      responseIO.flatMap { response =>
+        assertEquals(response.status.code, 400)
+        assertIO(
+          response.as[Json],
+          FixtureSupport.schemaIdTooLongStoreSchemaResponse(tooLongSchemaId)
+        )
+      }
+    }
+  }
+
   test("POST create schema should return 409 Conflict if schema already exists") {
     InMemorySchemaRepository.create().flatMap { schemaRepository =>
       val processor = Processor.create(schemaRepository)

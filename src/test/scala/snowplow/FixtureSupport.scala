@@ -113,6 +113,16 @@ object FixtureSupport {
     "message": "Schema with provided id already exists"
 }
 """
+
+  def schemaIdTooLongStoreSchemaResponse(schemaId: String) = json"""
+{
+    "action": "uploadSchema",
+    "id": $schemaId,
+    "status": "error",
+    "message": "Schema id is too long (max: 255 characters)"
+}
+"""
+
   val successValidateInstanceResponse =
     json"""
 {

@@ -34,14 +34,22 @@ case class HttpService(processor: Processor) {
             )
             Conflict(response.asJson)
           case Right(_) =>
-            val response = HttpResponse(
-              action = "uploadSchema",
-              id = schemaId,
-              status = ResponseStatus.Success
-            )
-            Created(response.asJson)
+            if (schemaId.length > 255) {
+              val response = HttpResponse(
+                action = "uploadSchema",
+                id = schemaId,
+                status = ResponseStatus.Error("Schema id is too long (max: 255 characters)")
+              )
+              BadRequest(response.asJson)
+            } else {
+              val response = HttpResponse(
+                action = "uploadSchema",
+                id = schemaId,
+                status = ResponseStatus.Success
+              )
+              Created(response.asJson)
+            }
         }
-
       }
       .handleErrorWith {
         case _: MalformedMessageBodyFailure => malformedJsonResponse("uploadSchema", schemaId)
