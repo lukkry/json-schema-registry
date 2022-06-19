@@ -30,6 +30,7 @@ lazy val root = (project in file("."))
       "org.tpolecat" %% "doobie-hikari" % doobieVersion,
       "org.tpolecat" %% "doobie-postgres-circe" % doobieVersion,
       "org.flywaydb" % "flyway-core" % "8.5.12",
+      "is.cir" %% "ciris" % "2.3.2",
       "org.scalameta" %% "munit" % "0.7.29" % Test,
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test,
       "com.dimafeng" %% "testcontainers-scala-munit" % "0.40.8" % Test,

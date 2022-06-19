@@ -33,7 +33,7 @@ class PostgresSchemaRepositoryTest extends CatsEffectSuite with TestContainersFi
   )
 
   def prepareDatabase(): IO[Unit] = {
-    DatabaseMigration.migrate(postgresFixture().jdbcUrl, username, password) >>
+    Postgres.migrate(postgresFixture().jdbcUrl, username, password) >>
       fr"TRUNCATE TABLE json_schema".update.run.transact(transactor).void
   }
 
