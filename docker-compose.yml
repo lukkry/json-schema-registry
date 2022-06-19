@@ -10,8 +10,6 @@ services:
       - "POSTGRES_DB=snowplow"
     ports:
       - "5432:5432"
-    volumes:
-      - "./sql:/docker-entrypoint-initdb.d"
   json-schema-registry:
     image: json-schema-registry:0.1.0-SNAPSHOT
     container_name: json-schema-registry
