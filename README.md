@@ -57,6 +57,12 @@ DATABASE_CONNECTION_STRING=jdbc:postgresql://localhost:5432/snowplow DATABASE_US
 
 Database migrations are run via Flyway on application startup.
 
+## Running automated tests locally
+Automated tests can be run with a below command. Docker environment is required PostgreSQL adapter tests.
+```shell
+sbt test
+```
+
 ## Running test scenarios locally
 From the project root, go to `test-data` directory
 ```shell
